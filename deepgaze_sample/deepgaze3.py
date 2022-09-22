@@ -1,3 +1,4 @@
+# %%
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.misc import face
@@ -7,12 +8,13 @@ import torch
 
 import deepgaze_pytorch
 
-DEVICE = 'cuda'
+DEVICE = 'cpu'
 
 # you can use DeepGazeI or DeepGazeIIE
 model = deepgaze_pytorch.DeepGazeIII(pretrained=True).to(DEVICE)
 
 image = face()
+print(image.shape)
 
 # location of previous scanpath fixations in x and y (pixel coordinates), starting with the initial fixation on the image.
 fixation_history_x = np.array([1024//2, 300, 500, 200, 200, 700])
@@ -28,11 +30,14 @@ centerbias = zoom(centerbias_template, (image.shape[0]/centerbias_template.shape
 centerbias -= logsumexp(centerbias)
 
 image_tensor = torch.tensor([image.transpose(2, 0, 1)]).to(DEVICE)
+print(image_tensor.shape)
 centerbias_tensor = torch.tensor([centerbias]).to(DEVICE)
+print(centerbias_tensor.shape)
 x_hist_tensor = torch.tensor([fixation_history_x[model.included_fixations]]).to(DEVICE)
 y_hist_tensor = torch.tensor([fixation_history_x[model.included_fixations]]).to(DEVICE)
 
 log_density_prediction = model(image_tensor, centerbias_tensor, x_hist_tensor, y_hist_tensor)
+print(log_density_prediction.shape)
 
 f, axs = plt.subplots(nrows=1, ncols=2, figsize=(8, 3))
 axs[0].imshow(image)
