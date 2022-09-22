@@ -1,4 +1,6 @@
 #%%
+from logging import root
+import os
 from cmath import log
 from hmac import trans_36
 import numpy as np
@@ -25,7 +27,6 @@ def deepgaze_2(train_path):
     resize_trans = transforms.Compose([transforms.Resize((800,1024)),
                                     transforms.ToTensor()  ])
     resize_train = torchvision.datasets.ImageFolder(root = train_path, transform=resize_trans)
-
     image = resize_train[0][0]
     print('loaded shape:', image.shape)
 
@@ -51,7 +52,7 @@ def deepgaze_2(train_path):
     axs[1].matshow(np.exp(log_density_prediction.detach().cpu().numpy()[0,0]), alpha=0.5, cmap=plt.cm.RdBu)
     axs[1].imshow(torch.transpose(image, 2, 0).transpose(0,1), alpha=0.4)
     axs[1].axis('off')
-    axs[1].matshow(np.exp(log_density_prediction.detach().cpu().numpy()[0,0]), cmap=plt.cm.RdBu)
-    axs[1].axis('off')
+    axs[2].matshow(np.exp(log_density_prediction.detach().cpu().numpy()[0,0]), cmap=plt.cm.RdBu)
+    axs[2].axis('off')
 
 # %%
