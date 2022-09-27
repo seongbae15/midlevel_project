@@ -22,10 +22,9 @@ for f, g, h in img_files:
 for f, g, h  in img_files:
     # t.ly/zgLP
     img = cv2.imread(f+'/'+h[0])
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     vectorized = img.reshape((-1,3))
     vectorized = np.float32(vectorized)
-    criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 10, 1.0)
+    criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 20, 1.0)
     K = 5 # N of colors
     attempts=10
     ret,label,center=cv2.kmeans(vectorized,K,None,criteria,attempts,cv2.KMEANS_PP_CENTERS)
@@ -33,7 +32,7 @@ for f, g, h  in img_files:
     
     res = center[label.flatten()]
     result_image = res.reshape((img.shape))
-    cv2.imwrite(f'{h[0]}_cluster.jpg', result_image)
+    cv2.imwrite(f'./image_result/{h[0]}_cluster.jpg', result_image)
 
     cv2.imshow('Original Image',img)
     cv2.imshow('Segmented Image when K = %i' % K, result_image)
