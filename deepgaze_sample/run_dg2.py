@@ -20,7 +20,6 @@ import deepgaze_pytorch
 warnings.filterwarnings("ignore")
 DEVICE = "cpu"
 
-
 # image = face() #racoon face image load
 train_path = "../data_sample"  # on notebook
 
@@ -39,10 +38,8 @@ resize_trans = transforms.Compose(
 dataloader = torchvision.datasets.ImageFolder(root=train_path, transform=resize_trans)
 
 
-for pics, idx in iter(dataloader):
-    print(len(pics), idx)
-    """
-    image = pics
+for idx, pics in enumerate(dataloader):
+    image = pics[0]
     image_unsq = image.unsqueeze(dim=0)
     # load precomputed centerbias log density (from MIT1003) over a 1024x1024 image
     # you can download the centerbias from https://github.com/matthias-k/DeepGaze/releases/download/v1.0.0/centerbias_mit1003.npy
@@ -59,7 +56,7 @@ for pics, idx in iter(dataloader):
             image.shape[2] / centerbias_template.shape[1],
         ),
         order=0,
-        mode="constant", # n
+        mode="constant",  # n
     )
     # renormalize log density
     centerbias -= logsumexp(centerbias)
@@ -80,6 +77,6 @@ for pics, idx in iter(dataloader):
         np.exp(log_density_prediction.detach().cpu().numpy()[0, 0]), cmap=plt.cm.RdBu
     )
     axs[2].axis("off")
-    plt.savefig(f'../data_result/{idx}_reuslt.png')
-    """
+    plt.savefig(f"../data_result/{idx}_result.png")
+
 # %%
