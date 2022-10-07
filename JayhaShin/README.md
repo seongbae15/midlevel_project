@@ -6,15 +6,18 @@
     for use of the Intel(R) Math Kernel Library.)
  - 빠른 해결 방안: Google Colab
 
+
 "midlevel_price_OCR_easyocr.py"
  - Input: image (매대, 가격표 등)
  - Output: Radial heatmap
  - 인식률 개선 필요
 
+
 "midlevel_price_OCR_pytesseract.py"
  - Input: image (매대, 가격표 등)
  - Output: Radial heatmap
  - 인식률 개선 필요
+
 
 "_ocr_common_func.py"
  - OCR 작업 관련 공통 함수 모음
