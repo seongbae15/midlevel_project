@@ -2,7 +2,8 @@ import os
 import sys
 import numpy as np
 import cv2
-import matplotlib.pyplot as plt
+
+# import matplotlib.pyplot as plt
 
 file_path = "./data_sample"
 file_list = os.walk(file_path)  # OS로 불러오기

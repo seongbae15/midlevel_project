@@ -1,11 +1,12 @@
 # Mac Files
 .DS_Store
 .localized
-.jpg
-.png
+*.jpg
+*.png
 
 # Python
 __pycache__/
 
 # Jupyter Notebook
 .ipynb_checkpoints/
+data_sample/
