@@ -30,7 +30,7 @@ train_path = "../data_sample"  # on notebook
 model = deepgaze_pytorch.DeepGazeIIE(pretrained=True).to(DEVICE)
 # image resize
 resize_trans = transforms.Compose(
-    [transforms.Resize((800, 1024)), transforms.ToTensor()]
+    [transforms.Resize((1024, 1024)), transforms.ToTensor()]
 )
 
 # with folder:
@@ -41,12 +41,15 @@ dataloader = torchvision.datasets.ImageFolder(root=train_path, transform=resize_
 for idx, pics in enumerate(dataloader):
     image = pics[0]
     image_unsq = image.unsqueeze(dim=0)
+
+    # mask of image
+
     # load precomputed centerbias log density (from MIT1003) over a 1024x1024 image
     # you can download the centerbias from https://github.com/matthias-k/DeepGaze/releases/download/v1.0.0/centerbias_mit1003.npy
     # alternatively, you can use a uniform centerbias via `centerbias_template = np.zeros((1024, 1024))`.
 
-    # centerbias_template = np.load('centerbias_mit1003.npy')
-    centerbias_template = np.zeros((800, 1024))
+    centerbias_template = np.load("centerbias_mit1003.npy")
+    # centerbias_template = np.zeros((800, 800))
 
     # rescale to match image size
     centerbias = zoom(
@@ -55,11 +58,11 @@ for idx, pics in enumerate(dataloader):
             image.shape[1] / centerbias_template.shape[0],
             image.shape[2] / centerbias_template.shape[1],
         ),
-        order=0,
-        mode="constant",  # n
+        order=2,
+        mode="nearest",  # nearest / constant
     )
     # renormalize log density
-    centerbias -= logsumexp(centerbias)
+    # centerbias -= logsumexp(centerbias)
     centerbias_tensor = torch.tensor([centerbias]).to(DEVICE)
 
     log_density_prediction = model(image_unsq, centerbias_tensor)
