@@ -1,7 +1,6 @@
 #%%
 from logging import root
-import os
-import sys
+from skimage import color
 from cmath import log
 from hmac import trans_36
 import numpy as np
@@ -28,6 +27,8 @@ train_path = "../data_sample"  # on notebook
 
 
 model = deepgaze_pytorch.DeepGazeIIE(pretrained=True).to(DEVICE)
+# image preprocess
+
 # image resize
 resize_trans = transforms.Compose(
     [transforms.Resize((1024, 1024)), transforms.ToTensor()]
@@ -39,10 +40,14 @@ dataloader = torchvision.datasets.ImageFolder(root=train_path, transform=resize_
 
 
 for idx, pics in enumerate(dataloader):
-    image = pics[0]
-    image_unsq = image.unsqueeze(dim=0)
+    image_rgb = pics[0]
 
-    # mask of image
+    image = color.rgb2lab(rgb=image_rgb.T, channel_axis=-1)  # color space to lab
+    # result = 800, 1200, 3 -> 바꿔줘야
+
+    image = torch.tensor(image.transpose(2, 1, 0)).to(DEVICE)
+
+    image_unsq = image.unsqueeze(dim=0)
 
     # load precomputed centerbias log density (from MIT1003) over a 1024x1024 image
     # you can download the centerbias from https://github.com/matthias-k/DeepGaze/releases/download/v1.0.0/centerbias_mit1003.npy
@@ -58,7 +63,7 @@ for idx, pics in enumerate(dataloader):
             image.shape[1] / centerbias_template.shape[0],
             image.shape[2] / centerbias_template.shape[1],
         ),
-        order=2,
+        order=5,
         mode="nearest",  # nearest / constant
     )
     # renormalize log density
@@ -68,13 +73,13 @@ for idx, pics in enumerate(dataloader):
     log_density_prediction = model(image_unsq, centerbias_tensor)
     print(log_density_prediction.shape)
     f, axs = plt.subplots(nrows=1, ncols=3, figsize=(12, 18))
-    axs[0].imshow(torch.transpose(image, 2, 0).transpose(0, 1))
+    axs[0].imshow(torch.transpose(image_rgb, 2, 0).transpose(0, 1))
     axs[1].matshow(
         np.exp(log_density_prediction.detach().cpu().numpy()[0, 0]),
         alpha=0.5,
         cmap=plt.cm.RdBu,
     )
-    axs[1].imshow(torch.transpose(image, 2, 0).transpose(0, 1), alpha=0.4)
+    axs[1].imshow(torch.transpose(image_rgb, 2, 0).transpose(0, 1), alpha=0.4)
     axs[1].axis("off")
     axs[2].matshow(
         np.exp(log_density_prediction.detach().cpu().numpy()[0, 0]), cmap=plt.cm.RdBu
