@@ -1,6 +1,6 @@
 # !pip install timm
 
-IMG_DIR_2 = 'JayhaShin/매대진열상품_빈칸2.jpeg'
+IMG_DIR_2 = 'JayhaShin/sample_depth.jpeg'
 
 import cv2
 import torch
