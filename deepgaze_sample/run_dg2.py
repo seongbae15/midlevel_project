@@ -19,7 +19,7 @@ warnings.filterwarnings("ignore")
 DEVICE = "cpu"
 
 # image = face() #racoon face image load
-train_path = "../data_sample"  # on notebook
+train_path = "./data_sample"  # on notebook
 
 
 # you can use DeepGazeI or DeepGazeIIE
@@ -66,8 +66,13 @@ model.BACKBONES = [
         ],
         "channels": 2560,
     },
+    {
+        "type": "deepgaze_pytorch.features.vggnet.RGBvgg19",
+        "used_features": [],
+        "channels": 2048,
+    },
 ]
-
+print(model.BACKBONES)
 # image preprocess
 
 # image resize
@@ -103,11 +108,11 @@ for idx, pics in enumerate(dataloader):
             image.shape[1] / centerbias_template.shape[0],
             image.shape[2] / centerbias_template.shape[1],
         ),
-        order=5,
+        order=3,
         mode="nearest",  # nearest / constant
     )
     # renormalize log density
-    # centerbias -= logsumexp(centerbias)
+    centerbias -= logsumexp(centerbias)
     centerbias_tensor = torch.tensor([centerbias]).to(DEVICE)
 
     log_density_prediction = model(image_unsq, centerbias_tensor)
