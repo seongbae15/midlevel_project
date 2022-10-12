@@ -5,6 +5,7 @@ import torch
 import torch.nn as nn
 import torchvision
 
+
 class Normalizer(nn.Module):
     def __init__(self):
         super(Normalizer, self).__init__()
@@ -12,9 +13,9 @@ class Normalizer(nn.Module):
         self.std = torch.Tensor([0.229, 0.224, 0.225])
 
     def forward(self, input):
-        t = input/255
+        t = input / 255
         for i in range(3):
-            t[0][i]=(t[0][i]-self.mean[i])/self.std[i]
+            t[0][i] = (t[0][i] - self.mean[i]) / self.std[i]
 
         return t
 
@@ -22,7 +23,7 @@ class Normalizer(nn.Module):
 class RGBvgg19(nn.Sequential):
     def __init__(self):
         super(RGBvgg19, self).__init__()
-        self.model = torch.hub.load('pytorch/vision:v0.6.0', 'vgg19', pretrained=True)
+        self.model = torch.hub.load("pytorch/vision:v0.6.0", "vgg19", pretrained=True)
         self.normalizer = Normalizer()
         super(RGBvgg19, self).__init__(self.normalizer, self.model)
 
@@ -30,6 +31,19 @@ class RGBvgg19(nn.Sequential):
 class RGBvgg11(nn.Sequential):
     def __init__(self):
         super(RGBvgg11, self).__init__()
-        self.model = torch.hub.load('pytorch/vision:v0.6.0', 'vgg11', pretrained=True)
+        self.model = torch.hub.load("pytorch/vision:v0.6.0", "vgg11", pretrained=True)
         self.normalizer = Normalizer()
         super(RGBvgg11, self).__init__(self.normalizer, self.model)
+
+
+# added
+
+
+class RGBvgg19_bn(nn.Sequential):
+    def __init__(self):
+        super(RGBvgg19, self).__init__()
+        self.model = torch.hub.load(
+            "pytorch/vision:v0.10.0", "vgg19_bn", pretrained=True
+        )
+        self.normalizer = Normalizer()
+        super(RGBvgg19, self).__init__(self.normalizer, self.model)
