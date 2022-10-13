@@ -56,7 +56,21 @@ def load_model(model_name):
 
     # retail dataset adaptation
 
-    #   elif ""
+    elif "DETR" in model_name:
+        # print("DETR pretrained by https://github.com/facebookresearch/detr")
+
+        filepath = "/Users/krc/Documents/retail/retail_gh/weights/detr-r50-e632da11.pth"
+
+        assert os.path.exists(
+            filepath
+        ), "Please download the VGG model yourself from the following link and save it locally: https://drive.google.com/drive/folders/1A0vUWyU6fTuc-xWgwQQeBvzbwi6geYQK (too large to be downloaded automatically like the other models)"
+
+        model = model = torch.hub.load(
+            "facebookresearch/detr", "detr_resnet50", pretrained=True
+        )
+        model.features = torch.nn.DataParallel(model.features)
+        model.cuda()
+        checkpoint = torch.load(filepath, map_location=torch.device("cpu"))
     else:
         raise ValueError("unknown model architecture.")
 
@@ -79,6 +93,14 @@ class Normalizer(nn.Module):
             t[0][i] = (t[0][i] - self.mean[i]) / self.std[i]
 
         return t
+
+
+class DETR(nn.Sequential):
+    def __init__(self):
+        super(DETR, self).__init__()
+        self.shapenet = load_model("DETR")
+        self.normalizer = Normalizer()
+        super(RGBShapeNetA, self).__init__(self.normalizer, self.shapenet)
 
 
 class RGBShapeNetA(nn.Sequential):

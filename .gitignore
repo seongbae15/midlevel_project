@@ -10,3 +10,7 @@ __pycache__/
 # Jupyter Notebook
 .ipynb_checkpoints/
 data_sample/
+
+# weight files
+
+*.pth

@@ -19,13 +19,21 @@ warnings.filterwarnings("ignore")
 DEVICE = "cpu"
 
 # image = face() #racoon face image load
-train_path = "./data_sample"  # on notebook
+train_path = "../data_sample"  # on notebook : ../data_sample
 
 
 # you can use DeepGazeI or DeepGazeIIE
 model = deepgaze_pytorch.DeepGazeIIE(pretrained=True).to(DEVICE)
 # model config
 model.BACKBONES = [
+    {
+        "type": "deepgaze_pytorch.features.shapenet.DETR",
+        "used_features": [
+            "1.model.transformer.encoder",
+            "1.model.transformer.decoder",
+        ],
+        "channels": 1024,
+    },
     {
         "type": "deepgaze_pytorch.features.shapenet.RGBShapeNetC",
         "used_features": [
@@ -66,18 +74,12 @@ model.BACKBONES = [
         ],
         "channels": 2560,
     },
-    {
-        "type": "deepgaze_pytorch.features.vggnet.RGBvgg19",
-        "used_features": [],
-        "channels": 2048,
-    },
 ]
-print(model.BACKBONES)
 # image preprocess
 
 # image resize
 resize_trans = transforms.Compose(
-    [transforms.Resize((1024, 1024)), transforms.ToTensor()]
+    [transforms.Resize((900, 900)), transforms.ToTensor()]
 )
 
 # with folder:
@@ -98,8 +100,8 @@ for idx, pics in enumerate(dataloader):
     # you can download the centerbias from https://github.com/matthias-k/DeepGaze/releases/download/v1.0.0/centerbias_mit1003.npy
     # alternatively, you can use a uniform centerbias via `centerbias_template = np.zeros((1024, 1024))`.
 
-    centerbias_template = np.load("centerbias_mit1003.npy")
-    # centerbias_template = np.zeros((1024, 1024))
+    # centerbias_template = np.load("centerbias_mit1003.npy")
+    centerbias_template = np.ones((900, 900)) * 0.5
 
     # rescale to match image size
     centerbias = zoom(
