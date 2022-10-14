@@ -10,7 +10,7 @@ array_cb = np.load(
     "/Users/krc/Documents/retail/retail_gh/deepgaze_sample/centerbias_mit1003.npy"
 )
 df_cb = pd.DataFrame(array_cb)
-print(df_cb.describe())
+print(df_cb[300:700].describe())
 
 ############# means and std ###########
 # mean = 0.0

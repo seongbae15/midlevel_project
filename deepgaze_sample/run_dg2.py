@@ -24,57 +24,8 @@ train_path = "../data_sample"  # on notebook : ../data_sample
 
 # you can use DeepGazeI or DeepGazeIIE
 model = deepgaze_pytorch.DeepGazeIIE(pretrained=True).to(DEVICE)
-# model config
-model.BACKBONES = [
-    {
-        "type": "deepgaze_pytorch.features.shapenet.DETR",
-        "used_features": [
-            "1.model.transformer.encoder",
-            "1.model.transformer.decoder",
-        ],
-        "channels": 1024,
-    },
-    {
-        "type": "deepgaze_pytorch.features.shapenet.RGBShapeNetC",
-        "used_features": [
-            "1.module.layer3.0.conv2",
-            "1.module.layer3.3.conv2",
-            "1.module.layer3.5.conv1",
-            "1.module.layer3.5.conv2",
-            "1.module.layer4.1.conv2",
-            "1.module.layer4.2.conv2",
-        ],
-        "channels": 2048,
-    },
-    {
-        "type": "deepgaze_pytorch.features.efficientnet.RGBEfficientNetB5",
-        "used_features": [
-            "1._blocks.24._depthwise_conv",
-            "1._blocks.26._depthwise_conv",
-            "1._blocks.35._project_conv",
-        ],
-        "channels": 2416,
-    },
-    {
-        "type": "deepgaze_pytorch.features.densenet.RGBDenseNet201",
-        "used_features": [
-            "1.features.denseblock4.denselayer32.norm1",
-            "1.features.denseblock4.denselayer32.conv1",
-            "1.features.denseblock4.denselayer31.conv2",
-        ],
-        "channels": 2048,
-    },
-    {
-        "type": "deepgaze_pytorch.features.resnext.RGBResNext50",
-        "used_features": [
-            "1.layer3.5.conv1",
-            "1.layer3.5.conv2",
-            "1.layer3.4.conv2",
-            "1.layer4.2.conv2",
-        ],
-        "channels": 2560,
-    },
-]
+# print
+
 # image preprocess
 
 # image resize
@@ -100,8 +51,8 @@ for idx, pics in enumerate(dataloader):
     # you can download the centerbias from https://github.com/matthias-k/DeepGaze/releases/download/v1.0.0/centerbias_mit1003.npy
     # alternatively, you can use a uniform centerbias via `centerbias_template = np.zeros((1024, 1024))`.
 
-    # centerbias_template = np.load("centerbias_mit1003.npy")
-    centerbias_template = np.ones((900, 900)) * 0.5
+    centerbias_template = np.load("centerbias_mit1003.npy")
+    # centerbias_template = np.ones((900, 900)) * (-16)
 
     # rescale to match image size
     centerbias = zoom(
@@ -110,29 +61,30 @@ for idx, pics in enumerate(dataloader):
             image.shape[1] / centerbias_template.shape[0],
             image.shape[2] / centerbias_template.shape[1],
         ),
-        order=3,
+        order=2,
         mode="nearest",  # nearest / constant
     )
     # renormalize log density
     centerbias -= logsumexp(centerbias)
     centerbias_tensor = torch.tensor([centerbias]).to(DEVICE)
-
-    log_density_prediction = model(image_unsq, centerbias_tensor)
-    if idx % 10 == 0:
-        print(f"number {idx} image is processed")
-    f, axs = plt.subplots(nrows=1, ncols=3, figsize=(18, 12))
-    axs[0].imshow(torch.transpose(image_rgb, 2, 0).transpose(0, 1))
-    axs[1].matshow(
-        np.exp(log_density_prediction.detach().cpu().numpy()[0, 0]),
-        alpha=0.5,
-        cmap=plt.cm.RdBu,
-    )
-    axs[1].imshow(torch.transpose(image_rgb, 2, 0).transpose(0, 1), alpha=0.4)
-    axs[1].axis("off")
-    axs[2].matshow(
-        np.exp(log_density_prediction.detach().cpu().numpy()[0, 0]), cmap=plt.cm.RdBu
-    )
-    axs[2].axis("off")
-    plt.savefig(f"../data_result/{idx}_result.png")
+print(type(centerbias_tensor))
+print(type(image_unsq))
+# log_density_prediction = model(image_unsq, centerbias_tensor)
+# if idx % 10 == 0:
+#     print(f"number {idx} image is processed")
+# f, axs = plt.subplots(nrows=1, ncols=3, figsize=(18, 12))
+# axs[0].imshow(torch.transpose(image_rgb, 2, 0).transpose(0, 1))
+# axs[1].matshow(
+#     np.exp(log_density_prediction.detach().cpu().numpy()[0, 0]),
+#     alpha=0.5,
+#     cmap=plt.cm.RdBu,
+# )
+# axs[1].imshow(torch.transpose(image_rgb, 2, 0).transpose(0, 1), alpha=0.4)
+# axs[1].axis("off")
+# axs[2].matshow(
+#     np.exp(log_density_prediction.detach().cpu().numpy()[0, 0]), cmap=plt.cm.RdBu
+# )
+# axs[2].axis("off")
+# plt.savefig(f"../data_result/{idx}_result.png")
 
 # %%
