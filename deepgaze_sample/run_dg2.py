@@ -34,7 +34,6 @@ resize_trans = transforms.Compose(
 )
 
 # with folder:
-
 dataloader = torchvision.datasets.ImageFolder(root=train_path, transform=resize_trans)
 
 
@@ -53,7 +52,9 @@ for idx, pics in enumerate(dataloader):
     # you can download the centerbias from https://github.com/matthias-k/DeepGaze/releases/download/v1.0.0/centerbias_mit1003.npy
     # alternatively, you can use a uniform centerbias via `centerbias_template = np.zeros((1024, 1024))`.
 
-    centerbias_template = np.load("centerbias_mit1003.npy")
+    centerbias_template = np.load(
+        "centerbias_mit1003.npy"
+    )  # on vsc ./deepgaze_sample/centerbias_mit1003.npy
     # centerbias_template = np.ones((900, 900)) * (-16)
 
     # rescale to match image size

@@ -13,7 +13,7 @@ def encode_scanpath_features(
     x_hist,
     y_hist,
     size,
-    device="cpu",
+    device=None,
     include_x=True,
     include_y=True,
     include_duration=False,
@@ -72,13 +72,12 @@ class FeatureExtractor(torch.nn.Module):
         super().__init__()
         self.features = features
         self.targets = targets
-        print("Targets are {}".format(targets))
+        # print("Targets are {}".format(targets))
         self.outputs = {}
 
         for target in targets:
 
             def hook(module, input, output, target=target):
-                output = output[0]
                 self.outputs[target] = output.clone()
 
             rgetattr(self.features, target).register_forward_hook(hook)
@@ -159,7 +158,7 @@ class Finalizer(nn.Module):
                 centerbias.shape[0], 1, centerbias.shape[1], centerbias.shape[2]
             ),
             scale_factor=1 / self.saliency_map_factor,
-            recompute_scale_factor=True,  # False
+            recompute_scale_factor=False,
         )[:, 0, :, :]
 
         out = F.interpolate(

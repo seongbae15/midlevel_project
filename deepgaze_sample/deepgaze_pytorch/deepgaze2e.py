@@ -18,6 +18,7 @@ from .layers import (
     Bias,
 )
 
+
 BACKBONES = [
     {
         "type": "deepgaze_pytorch.features.shapenet.RGBShapeNetC",
@@ -153,8 +154,7 @@ class DeepGazeIIE(MixtureModel):
                 model_zoo.load_url(
                     "https://github.com/matthias-k/DeepGaze/releases/download/v1.0.0/deepgaze2e.pth",
                     map_location=torch.device("cpu"),
-                ),
-                strict=False,
+                )
             )
 
 
