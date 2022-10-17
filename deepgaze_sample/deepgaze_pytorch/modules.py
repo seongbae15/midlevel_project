@@ -72,7 +72,7 @@ class FeatureExtractor(torch.nn.Module):
         super().__init__()
         self.features = features
         self.targets = targets
-        # print("Targets are {}".format(targets))
+        print("Targets are {}".format(targets))
         self.outputs = {}
 
         for target in targets:
@@ -159,7 +159,7 @@ class Finalizer(nn.Module):
                 centerbias.shape[0], 1, centerbias.shape[1], centerbias.shape[2]
             ),
             scale_factor=1 / self.saliency_map_factor,
-            recompute_scale_factor=False,
+            recompute_scale_factor=True,  # False
         )[:, 0, :, :]
 
         out = F.interpolate(

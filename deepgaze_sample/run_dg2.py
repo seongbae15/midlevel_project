@@ -40,13 +40,15 @@ dataloader = torchvision.datasets.ImageFolder(root=train_path, transform=resize_
 
 for idx, pics in enumerate(dataloader):
     image_rgb = pics[0]
+    # print(len(pics), type(pics), image_rgb.size(), image_rgb.dim())
 
     image = color.rgb2lab(rgb=image_rgb.T, channel_axis=-1)  # color space to lab
     # result = 800, 1200, 3 -> 바꿔줘야
     image = torch.tensor(image.transpose(2, 1, 0)).to(DEVICE)
 
     image_unsq = image.unsqueeze(dim=0)
-
+    # print(    type(image_unsq),  image_unsq.dim(),  image_unsq.shape, )
+    # break
     # load precomputed centerbias log density (from MIT1003) over a 1024x1024 image
     # you can download the centerbias from https://github.com/matthias-k/DeepGaze/releases/download/v1.0.0/centerbias_mit1003.npy
     # alternatively, you can use a uniform centerbias via `centerbias_template = np.zeros((1024, 1024))`.
@@ -58,33 +60,32 @@ for idx, pics in enumerate(dataloader):
     centerbias = zoom(
         centerbias_template,
         (
-            image.shape[1] / centerbias_template.shape[0],
-            image.shape[2] / centerbias_template.shape[1],
+            image_unsq.shape[2] / centerbias_template.shape[0],
+            image_unsq.shape[3] / centerbias_template.shape[1],
         ),
-        order=2,
-        mode="nearest",  # nearest / constant
+        order=0,
+        mode="nearest",
     )
     # renormalize log density
-    centerbias -= logsumexp(centerbias)
+    # centerbias -= logsumexp(centerbias)
     centerbias_tensor = torch.tensor([centerbias]).to(DEVICE)
-print(type(centerbias_tensor))
-print(type(image_unsq))
-# log_density_prediction = model(image_unsq, centerbias_tensor)
-# if idx % 10 == 0:
-#     print(f"number {idx} image is processed")
-# f, axs = plt.subplots(nrows=1, ncols=3, figsize=(18, 12))
-# axs[0].imshow(torch.transpose(image_rgb, 2, 0).transpose(0, 1))
-# axs[1].matshow(
-#     np.exp(log_density_prediction.detach().cpu().numpy()[0, 0]),
-#     alpha=0.5,
-#     cmap=plt.cm.RdBu,
-# )
-# axs[1].imshow(torch.transpose(image_rgb, 2, 0).transpose(0, 1), alpha=0.4)
-# axs[1].axis("off")
-# axs[2].matshow(
-#     np.exp(log_density_prediction.detach().cpu().numpy()[0, 0]), cmap=plt.cm.RdBu
-# )
-# axs[2].axis("off")
-# plt.savefig(f"../data_result/{idx}_result.png")
+
+    log_density_prediction = model(image_unsq, centerbias_tensor)
+    if idx % 10 == 0:
+        print(f"number {idx} image is processed")
+    f, axs = plt.subplots(nrows=1, ncols=3, figsize=(18, 12))
+    axs[0].imshow(torch.transpose(image_rgb, 2, 0).transpose(0, 1))
+    axs[1].matshow(
+        np.exp(log_density_prediction.detach().cpu().numpy()[0, 0]),
+        alpha=0.5,
+        cmap=plt.cm.RdBu,
+    )
+    axs[1].imshow(torch.transpose(image_rgb, 2, 0).transpose(0, 1), alpha=0.4)
+    axs[1].axis("off")
+    axs[2].matshow(
+        np.exp(log_density_prediction.detach().cpu().numpy()[0, 0]), cmap=plt.cm.RdBu
+    )
+    axs[2].axis("off")
+    plt.savefig(f"../data_result/{idx}_result.png")
 
 # %%

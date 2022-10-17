@@ -18,35 +18,16 @@ from .layers import (
     Bias,
 )
 
-
 BACKBONES = [
-    # {
-    #     "type": "deepgaze_pytorch.features.shapenet.RGBShapeNetC",
-    #     "used_features": [
-    #         "1.module.layer3.0.conv2",
-    #         "1.module.layer3.3.conv2",
-    #         "1.module.layer3.5.conv1",
-    #         "1.module.layer3.5.conv2",
-    #         "1.module.layer4.1.conv2",
-    #         "1.module.layer4.2.conv2",
-    #     ],
-    #     "channels": 2048,
-    # },
     {
-        "type": "deepgaze_pytorch.features.wsl.DETR",
+        "type": "deepgaze_pytorch.features.shapenet.RGBShapeNetC",
         "used_features": [
-            "1.transformer",
-            # "1.transformer.encoder.layers.1",
-            # "1.transformer.encoder.layers.2",
-            # "1.transformer.encoder.layers.3",
-            # "1.transformer.encoder.layers.4",
-            # "1.transformer.encoder.layers.5",
-            # "1.transformer.decoder.layers.0",
-            # "1.transformer.decoder.layers.1",
-            # "1.transformer.decoder.layers.2",
-            # "1.transformer.decoder.layers.3",
-            # "1.transformer.decoder.layers.4",
-            # "1.transformer.decoder.layers.5",
+            "1.module.layer3.0.conv2",
+            "1.module.layer3.3.conv2",
+            "1.module.layer3.5.conv1",
+            "1.module.layer3.5.conv2",
+            "1.module.layer4.1.conv2",
+            "1.module.layer4.2.conv2",
         ],
         "channels": 2048,
     },
