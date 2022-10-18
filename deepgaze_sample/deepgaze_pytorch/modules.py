@@ -413,6 +413,7 @@ class MixtureModel(torch.nn.Module):
     def __init__(self, models):
         super().__init__()
         self.models = torch.nn.ModuleList(models)
+        # print(models) ###
 
     def forward(self, *args, **kwargs):
         predictions = [model.forward(*args, **kwargs) for model in self.models]

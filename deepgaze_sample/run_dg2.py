@@ -14,6 +14,7 @@ from torch.utils.data import DataLoader
 from torchvision.transforms.functional import to_pil_image
 import warnings
 import deepgaze_pytorch
+from PIL import Image
 
 warnings.filterwarnings("ignore")
 DEVICE = "cpu"
@@ -24,13 +25,15 @@ train_path = "../data_sample"  # on notebook : ../data_sample
 
 # you can use DeepGazeI or DeepGazeIIE
 model = deepgaze_pytorch.DeepGazeIIE(pretrained=True).to(DEVICE)
-# print
-
-# image preprocess
+# print(model)
 
 # image resize
 resize_trans = transforms.Compose(
-    [transforms.Resize((900, 900)), transforms.ToTensor()]
+    [
+        transforms.Resize((900, 900)),
+        transforms.GaussianBlur(kernel_size=(25, 25), sigma=(1.0, 10.0)),
+        transforms.ToTensor(),
+    ]
 )
 
 # with folder:
@@ -40,6 +43,8 @@ dataloader = torchvision.datasets.ImageFolder(root=train_path, transform=resize_
 for idx, pics in enumerate(dataloader):
     image_rgb = pics[0]
     # print(len(pics), type(pics), image_rgb.size(), image_rgb.dim())
+
+    # image preprocess
 
     image = color.rgb2lab(rgb=image_rgb.T, channel_axis=-1)  # color space to lab
     # result = 800, 1200, 3 -> 바꿔줘야
