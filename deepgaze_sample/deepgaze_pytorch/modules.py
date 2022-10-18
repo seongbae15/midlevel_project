@@ -9,7 +9,15 @@ import torch.nn.functional as F
 from .layers import GaussianFilterNd
 
 
-def encode_scanpath_features(x_hist, y_hist, size, device=None, include_x=True, include_y=True, include_duration=False):
+def encode_scanpath_features(
+    x_hist,
+    y_hist,
+    size,
+    device=None,
+    include_x=True,
+    include_y=True,
+    include_duration=False,
+):
     assert include_x
     assert include_y
     assert not include_duration
@@ -52,9 +60,11 @@ def encode_scanpath_features(x_hist, y_hist, size, device=None, include_x=True, 
 # https://stackoverflow.com/questions/31174295/getattr-and-setattr-on-nested-objects/31174427?noredirect=1#comment86638618_31174427
 def rgetattr(obj, attr, *args):
     """rgetattr is a drop-in replacements for getattr, which can also handle dotted attr strings. We can use this to get the nested Sequential parts."""
+
     def _getattr(obj, attr):
         return getattr(obj, attr, *args)
-    return functools.reduce(_getattr, [obj] + attr.split('.'))
+
+    return functools.reduce(_getattr, [obj] + attr.split("."))
 
 
 class FeatureExtractor(torch.nn.Module):
@@ -62,12 +72,14 @@ class FeatureExtractor(torch.nn.Module):
         super().__init__()
         self.features = features
         self.targets = targets
-        #print("Targets are {}".format(targets))
+        # print("Targets are {}".format(targets))
         self.outputs = {}
 
         for target in targets:
+
             def hook(module, input, output, target=target):
                 self.outputs[target] = output.clone()
+
             rgetattr(self.features, target).register_forward_hook(hook)
 
     def forward(self, x):
@@ -88,7 +100,7 @@ def upscale(tensor, size):
     tensor = torch.repeat_interleave(tensor, factor, dim=2)
     tensor = torch.repeat_interleave(tensor, factor, dim=3)
 
-    tensor = tensor[:, :, :size[0], :size[1]]
+    tensor = tensor[:, :, : size[0], : size[1]]
 
     return tensor
 
@@ -134,20 +146,24 @@ class Finalizer(nn.Module):
         self.saliency_map_factor = saliency_map_factor
 
         self.gauss = GaussianFilterNd([2, 3], sigma, truncate=3, trainable=learn_sigma)
-        self.center_bias_weight = nn.Parameter(torch.Tensor([center_bias_weight]), requires_grad=learn_center_bias_weight)
+        self.center_bias_weight = nn.Parameter(
+            torch.Tensor([center_bias_weight]), requires_grad=learn_center_bias_weight
+        )
 
     def forward(self, readout, centerbias):
         """Applies the finalization steps to the given readout"""
 
         downscaled_centerbias = F.interpolate(
-            centerbias.view(centerbias.shape[0], 1, centerbias.shape[1], centerbias.shape[2]),
+            centerbias.view(
+                centerbias.shape[0], 1, centerbias.shape[1], centerbias.shape[2]
+            ),
             scale_factor=1 / self.saliency_map_factor,
             recompute_scale_factor=False,
         )[:, 0, :, :]
 
         out = F.interpolate(
             readout,
-            size=[downscaled_centerbias.shape[1], downscaled_centerbias.shape[2]]
+            size=[downscaled_centerbias.shape[1], downscaled_centerbias.shape[2]],
         )
 
         # apply gaussian filter
@@ -159,7 +175,9 @@ class Finalizer(nn.Module):
         # add to center bias
         out = out + self.center_bias_weight * downscaled_centerbias
 
-        out = F.interpolate(out[:, np.newaxis, :, :], size=[centerbias.shape[1], centerbias.shape[2]])[:, 0, :, :]
+        out = F.interpolate(
+            out[:, np.newaxis, :, :], size=[centerbias.shape[1], centerbias.shape[2]]
+        )[:, 0, :, :]
 
         # normalize
         out = out - out.logsumexp(dim=(1, 2), keepdim=True)
@@ -168,7 +186,15 @@ class Finalizer(nn.Module):
 
 
 class DeepGazeII(torch.nn.Module):
-    def __init__(self, features, readout_network, downsample=2, readout_factor=16, saliency_map_factor=2, initial_sigma=8.0):
+    def __init__(
+        self,
+        features,
+        readout_network,
+        downsample=2,
+        readout_factor=16,
+        saliency_map_factor=2,
+        initial_sigma=8.0,
+    ):
         super().__init__()
 
         self.readout_factor = readout_factor
@@ -197,7 +223,10 @@ class DeepGazeII(torch.nn.Module):
         )
         x = self.features(x)
 
-        readout_shape = [math.ceil(orig_shape[2] / self.downsample / self.readout_factor), math.ceil(orig_shape[3] / self.downsample / self.readout_factor)]
+        readout_shape = [
+            math.ceil(orig_shape[2] / self.downsample / self.readout_factor),
+            math.ceil(orig_shape[3] / self.downsample / self.readout_factor),
+        ]
         x = [F.interpolate(item, readout_shape) for item in x]
 
         x = torch.cat(x, dim=1)
@@ -213,7 +242,18 @@ class DeepGazeII(torch.nn.Module):
 
 
 class DeepGazeIII(torch.nn.Module):
-    def __init__(self, features, saliency_network, scanpath_network, fixation_selection_network, downsample=2, readout_factor=2, saliency_map_factor=2, included_fixations=-2, initial_sigma=8.0):
+    def __init__(
+        self,
+        features,
+        saliency_network,
+        scanpath_network,
+        fixation_selection_network,
+        downsample=2,
+        readout_factor=2,
+        saliency_map_factor=2,
+        included_fixations=-2,
+        initial_sigma=8.0,
+    ):
         super().__init__()
 
         self.downsample = downsample
@@ -242,15 +282,20 @@ class DeepGazeIII(torch.nn.Module):
         x = F.interpolate(x, scale_factor=1 / self.downsample)
         x = self.features(x)
 
-        readout_shape = [math.ceil(orig_shape[2] / self.downsample / self.readout_factor), math.ceil(orig_shape[3] / self.downsample / self.readout_factor)]
+        readout_shape = [
+            math.ceil(orig_shape[2] / self.downsample / self.readout_factor),
+            math.ceil(orig_shape[3] / self.downsample / self.readout_factor),
+        ]
         x = [F.interpolate(item, readout_shape) for item in x]
 
         x = torch.cat(x, dim=1)
         x = self.saliency_network(x)
 
         if self.scanpath_network is not None:
-            scanpath_features = encode_scanpath_features(x_hist, y_hist, size=(orig_shape[2], orig_shape[3]), device=x.device)
-            #scanpath_features = F.interpolate(scanpath_features, scale_factor=1 / self.downsample / self.readout_factor)
+            scanpath_features = encode_scanpath_features(
+                x_hist, y_hist, size=(orig_shape[2], orig_shape[3]), device=x.device
+            )
+            # scanpath_features = F.interpolate(scanpath_features, scale_factor=1 / self.downsample / self.readout_factor)
             scanpath_features = F.interpolate(scanpath_features, readout_shape)
             y = self.scanpath_network(scanpath_features)
         else:
@@ -272,7 +317,19 @@ class DeepGazeIII(torch.nn.Module):
 
 
 class DeepGazeIIIMixture(torch.nn.Module):
-    def __init__(self, features, saliency_networks, scanpath_networks, fixation_selection_networks, finalizers, downsample=2, readout_factor=2, saliency_map_factor=2, included_fixations=-2, initial_sigma=8.0):
+    def __init__(
+        self,
+        features,
+        saliency_networks,
+        scanpath_networks,
+        fixation_selection_networks,
+        finalizers,
+        downsample=2,
+        readout_factor=2,
+        saliency_map_factor=2,
+        included_fixations=-2,
+        initial_sigma=8.0,
+    ):
         super().__init__()
 
         self.downsample = downsample
@@ -288,7 +345,9 @@ class DeepGazeIIIMixture(torch.nn.Module):
 
         self.saliency_networks = torch.nn.ModuleList(saliency_networks)
         self.scanpath_networks = torch.nn.ModuleList(scanpath_networks)
-        self.fixation_selection_networks = torch.nn.ModuleList(fixation_selection_networks)
+        self.fixation_selection_networks = torch.nn.ModuleList(
+            fixation_selection_networks
+        )
         self.finalizers = torch.nn.ModuleList(finalizers)
 
     def forward(self, x, centerbias, x_hist=None, y_hist=None, durations=None):
@@ -300,7 +359,10 @@ class DeepGazeIIIMixture(torch.nn.Module):
         )
         x = self.features(x)
 
-        readout_shape = [math.ceil(orig_shape[2] / self.downsample / self.readout_factor), math.ceil(orig_shape[3] / self.downsample / self.readout_factor)]
+        readout_shape = [
+            math.ceil(orig_shape[2] / self.downsample / self.readout_factor),
+            math.ceil(orig_shape[3] / self.downsample / self.readout_factor),
+        ]
         x = [F.interpolate(item, readout_shape) for item in x]
 
         x = torch.cat(x, dim=1)
@@ -309,14 +371,24 @@ class DeepGazeIIIMixture(torch.nn.Module):
 
         readout_input = x
 
-        for saliency_network, scanpath_network, fixation_selection_network, finalizer in zip(
-            self.saliency_networks, self.scanpath_networks, self.fixation_selection_networks, self.finalizers
+        for (
+            saliency_network,
+            scanpath_network,
+            fixation_selection_network,
+            finalizer,
+        ) in zip(
+            self.saliency_networks,
+            self.scanpath_networks,
+            self.fixation_selection_networks,
+            self.finalizers,
         ):
 
             x = saliency_network(readout_input)
 
             if scanpath_network is not None:
-                scanpath_features = encode_scanpath_features(x_hist, y_hist, size=(orig_shape[2], orig_shape[3]), device=x.device)
+                scanpath_features = encode_scanpath_features(
+                    x_hist, y_hist, size=(orig_shape[2], orig_shape[3]), device=x.device
+                )
                 scanpath_features = F.interpolate(scanpath_features, readout_shape)
                 y = scanpath_network(scanpath_features)
             else:
@@ -328,7 +400,9 @@ class DeepGazeIIIMixture(torch.nn.Module):
 
             predictions.append(x[:, np.newaxis, :, :])
 
-        predictions = torch.cat(predictions, dim=1) - np.log(len(self.saliency_networks))
+        predictions = torch.cat(predictions, dim=1) - np.log(
+            len(self.saliency_networks)
+        )
 
         prediction = predictions.logsumexp(dim=(1), keepdim=True)
 

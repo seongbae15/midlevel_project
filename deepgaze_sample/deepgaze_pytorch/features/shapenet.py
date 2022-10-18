@@ -42,21 +42,33 @@ def load_model(model_name):
 
         model = torchvision.models.vgg16(pretrained=False)
         model.features = torch.nn.DataParallel(model.features)
-        model.cuda()
+        #        model.cuda()
         checkpoint = torch.load(filepath, map_location=torch.device("cpu"))
 
     elif "alexnet" in model_name:
         # print("Using the AlexNet architecture.")
         model = torchvision.models.alexnet(pretrained=False)
-        model.features = torch.nn.DataParallel(model.features)
-        model.cuda()
+        model.features = torch.nn.DataParallel(model.transformer)
+        #        model.cuda()
         checkpoint = model_zoo.load_url(
             model_urls[model_name], map_location=torch.device("cpu")
         )
 
     # retail dataset adaptation
 
-    #   elif ""
+    elif "DETR" in model_name:
+        # print("DETR pretrained by https://github.com/facebookresearch/detr")
+
+        filepath = "/Users/krc/Documents/retail/retail_gh/weights/detr-r50-e632da11.pth"
+
+        assert os.path.exists(
+            filepath), "download in Github"
+
+        model = torch.hub.load(
+            "facebookresearch/detr", "detr_resnet50", pretrained=True
+        )
+        #        model.cuda()
+        checkpoint = torch.load(filepath, map_location=torch.device("cpu"))
     else:
         raise ValueError("unknown model architecture.")
 
@@ -79,6 +91,14 @@ class Normalizer(nn.Module):
             t[0][i] = (t[0][i] - self.mean[i]) / self.std[i]
 
         return t
+
+
+class DETR(nn.Sequential):
+    def __init__(self):
+        super(DETR, self).__init__()
+        self.shapenet = load_model("DETR")
+        self.normalizer = Normalizer()
+        super(DETR, self).__init__(self.normalizer, self.shapenet)
 
 
 class RGBShapeNetA(nn.Sequential):
