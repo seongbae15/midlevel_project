@@ -1,9 +1,16 @@
 # Mac Files
 .DS_Store
 .localized
+*.jpg
+*.png
 
 # Python
 __pycache__/
 
 # Jupyter Notebook
 .ipynb_checkpoints/
+data_sample/
+
+# weight files
+
+*.pth
