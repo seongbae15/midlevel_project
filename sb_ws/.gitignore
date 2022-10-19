@@ -1,0 +1,7 @@
+# Model, weights Files
+*.cfg
+*.weights
+
+# Dataset Files(Images)
+HumanPose/data
+HumanPose/output
