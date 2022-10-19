@@ -115,7 +115,7 @@ def _ocr_easyocr_whole_img(IMGDIR_or_IMAGE, CONFIDENCE=0.95):
         ocr_result["conf"] = ocr_result_conf
         ocr_result["text"] = ocr_result_text
         # remove non-numeric char from DataFrame
-        ocr_result.to_csv("temp_ocr_result_before_preprocess.csv")  # optional
+        # ocr_result.to_csv("temp_ocr_result_before_preprocess.csv")  # optional
         ocr_result = ocr_result.dropna(axis=0).reset_index(drop=True)
         for idx, str_item in enumerate(ocr_result["text"]):
             for char in str_item:

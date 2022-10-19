@@ -31,6 +31,8 @@ from modules.ocr_func import _img_ocr_result, _heatmap_2, _kmeanclustered, _ocr_
 
 
 # Download weight "craft_mlt_25k.pth" from Google drive
+if not os.path.isdir('./weights/'):
+    os.mkdir('./weights/')
 import gdown
 url = 'https://drive.google.com/file/d/1I0hnVhHHLKBGOrqYXHc8x19bssqzpsva/view?usp=sharing'
 output = './weights/craft_mlt_25k.pth'
