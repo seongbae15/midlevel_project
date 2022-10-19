@@ -1,0 +1,13 @@
+# Model, weights, log Files
+*.cfg
+*.weights
+*.log
+*.json
+*.yaml
+*.pth.tar
+*.pth
+*.pt
+
+# Dataset Files(Images)
+HumanPose/data
+HumanPose/output
