@@ -25,13 +25,13 @@ train_path = "../data_sample"  # on notebook : ../data_sample
 
 # you can use DeepGazeI or DeepGazeIIE
 model = deepgaze_pytorch.DeepGazeIIE(pretrained=True).to(DEVICE)
-# print(model)
+print(model.eval())
 
 # image resize
 resize_trans = transforms.Compose(
     [
         transforms.Resize((900, 900)),
-        transforms.GaussianBlur(kernel_size=(25, 25), sigma=(1.0, 10.0)),
+        #  transforms.GaussianBlur(kernel_size=(25, 25), sigma=(0.1, 2)),
         transforms.ToTensor(),
     ]
 )
@@ -42,13 +42,12 @@ dataloader = torchvision.datasets.ImageFolder(root=train_path, transform=resize_
 
 for idx, pics in enumerate(dataloader):
     image_rgb = pics[0]
+
     # print(len(pics), type(pics), image_rgb.size(), image_rgb.dim())
-
-    # image preprocess
-
-    image = color.rgb2lab(rgb=image_rgb.T, channel_axis=-1)  # color space to lab
+    # image = color.rgb2lab(rgb=image_rgb.T, channel_axis=-1)  # color space to lab
+    image = image_rgb
     # result = 800, 1200, 3 -> 바꿔줘야
-    image = torch.tensor(image.transpose(2, 1, 0)).to(DEVICE)
+    image = torch.tensor(image).to(DEVICE)  # .transpose(2, 1, 0) on Lab
 
     image_unsq = image.unsqueeze(dim=0)
     # print(    type(image_unsq),  image_unsq.dim(),  image_unsq.shape, )
@@ -57,9 +56,8 @@ for idx, pics in enumerate(dataloader):
     # you can download the centerbias from https://github.com/matthias-k/DeepGaze/releases/download/v1.0.0/centerbias_mit1003.npy
     # alternatively, you can use a uniform centerbias via `centerbias_template = np.zeros((1024, 1024))`.
 
-    centerbias_template = np.load(
-        "centerbias_mit1003.npy"
-    )  # on vsc ./deepgaze_sample/centerbias_mit1003.npy
+    # centerbias_template = np.load("centerbias_mit1003.npy"  )  # on vsc ./deepgaze_sample/centerbias_mit1003.npy
+    centerbias_template = np.load("new_cb.npy")  # customized npy
     # centerbias_template = np.ones((900, 900)) * (-16)
 
     # rescale to match image size
