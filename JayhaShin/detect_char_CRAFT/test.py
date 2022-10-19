@@ -3,29 +3,31 @@ Copyright (c) 2019-present NAVER Corp.
 MIT License
 """
 
-# -*- coding: utf-8 -*-
+import time
+starttime=time.time()
+
 import sys
 import os
-import time
+import cv2
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
 import argparse
-
+import json
+import zipfile
 import torch
 import torch.nn as nn
 import torch.backends.cudnn as cudnn
 from torch.autograd import Variable
-
 from PIL import Image
-
-import cv2
 from skimage import io
-import numpy as np
-import craft_utils
-import imgproc
-import file_utils
-import json
-import zipfile
 
-from craft import CRAFT
+import modules.craft_utils as craft_utils
+import modules.imgproc as imgproc
+import modules.file_utils as file_utils
+from modules.craft import CRAFT
+import modules.hangul_font_for_pyplot
+from modules.ocr_func import _img_ocr_result, _heatmap_2, _kmeanclustered, _ocr_easyocr_whole_img
 
 
 # Download weight "craft_mlt_25k.pth" from Google drive
@@ -54,7 +56,7 @@ parser = argparse.ArgumentParser(description='CRAFT Text Detection')
 parser.add_argument('--trained_model', default='weights/craft_mlt_25k.pth', type=str, help='pretrained model')
 parser.add_argument('--text_threshold', default=-np.inf, type=float, help='text confidence threshold')
 parser.add_argument('--low_text', default=0.4, type=float, help='text low-bound score')
-parser.add_argument('--link_threshold', default=np.inf, type=float, help='link confidence threshold')                  # 0.4  낮으면 전부 합친다
+parser.add_argument('--link_threshold', default=np.inf, type=float, help='link confidence threshold')
 parser.add_argument('--cuda', default=torch.cuda.is_available(), type=str2bool, help='Use cuda for inference')
 parser.add_argument('--canvas_size', default=np.inf, type=int, help='image size for inference')
 parser.add_argument('--mag_ratio', default=1., type=float, help='image magnification ratio')
@@ -67,12 +69,8 @@ parser.add_argument('--refiner_model', default='weights/craft_refiner_CTW1500.pt
 args = parser.parse_args()
 
 
-""" For test images in a folder """
-image_list, _, _ = file_utils.get_files(args.test_folder)
 
-result_folder = './result/'
-if not os.path.isdir(result_folder):
-    os.mkdir(result_folder)
+
 
 def test_net(net, image, text_threshold, link_threshold, low_text, cuda, poly, refine_net=None):
     t0 = time.time()
@@ -119,15 +117,14 @@ def test_net(net, image, text_threshold, link_threshold, low_text, cuda, poly, r
     # render results (optional)
     render_img = score_text.copy()
     render_img = np.hstack((render_img, score_link))
-    ret_score_text = imgproc.cvt2HeatmapImg(render_img)
+    heatmapimg_ndarray = imgproc.cvt2HeatmapImg(render_img)
 
     if args.show_time : print("\ninfer/postproc time : {:.3f}/{:.3f}".format(t0, t1))
 
-    return boxes, polys, ret_score_text
+    return boxes, polys, heatmapimg_ndarray
 
 
 
-""" Detection """
 # load net
 net = CRAFT()     # initialize
 
@@ -147,7 +144,7 @@ net.eval()
 # LinkRefiner
 refine_net = None
 if args.refine:
-    from refinenet import RefineNet
+    from modules.refinenet import RefineNet
     refine_net = RefineNet()
     print('Loading weights of refiner from checkpoint (' + args.refiner_model + ')')
     if args.cuda:
@@ -160,117 +157,92 @@ if args.refine:
     refine_net.eval()
     args.poly = True
 
-t = time.time()
 
+""" Detection """
 # load data
-for k, image_path in enumerate(image_list):
-    print("Test image {:d}/{:d}: {:s}".format(k+1, len(image_list), image_path), end='\r')
-    image = imgproc.loadImage(image_path)
-
-    bboxes, polys, score_text = test_net(net, image, args.text_threshold, args.link_threshold, args.low_text, args.cuda, args.poly, refine_net)
-
-    # save score text
-    filename, file_ext = os.path.splitext(os.path.basename(image_path))
-    mask_file = result_folder + "/res_2_" + filename + '_mask.jpg'
-    cv2.imwrite(mask_file, score_text)
-
-    file_utils.saveResult(image_path, image[:,:,::-1], polys, dirname=result_folder)
-
-print("elapsed time : {}s".format(time.time() - t))
+image_list, _, _ = file_utils.get_files(args.test_folder)  # receive only first image file
+img_file = image_list[0]
+original_img_ndarray = plt.imread(img_file)
+dh, dw, _ = original_img_ndarray.shape
+original_img_ndarray = _kmeanclustered(original_img_ndarray, 64)
 
 
+RESULT_DIR='./result/'
+if not os.path.isdir(RESULT_DIR):
+    os.mkdir(RESULT_DIR)
+
+plt.imsave(RESULT_DIR+"res_1_original.jpg", original_img_ndarray)
 
 
-""" Detection Result --> Extraction """
-import os
-import cv2
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-
-DIR = './result/'
-
-TEMP_LIST = list(os.listdir(DIR))
-RES_IMG_JPG = [x for x in TEMP_LIST if x.endswith("_img.jpg")]
-RES_MASK_JPG = [x for x in TEMP_LIST if x.endswith("_mask.jpg")]
-RES_TXT = [x for x in TEMP_LIST if x.endswith(".txt")]
-ORIGINAL_IMG = [x for x in TEMP_LIST if x.endswith("_orig.jpg")]
-print(RES_IMG_JPG[0])
-print(RES_MASK_JPG[0])
-print(RES_TXT[0])
+print("Test image: {:s}".format(img_file), end='\r')
+image = imgproc.loadImage(img_file)
+bboxes, polys, heatmapimg_ndarray = test_net(net, image, args.text_threshold, args.link_threshold, args.low_text, args.cuda, args.poly, refine_net)
 
 
-# plt.savefig(DIR+"res_4_subplot.jpg")
-
-res_txt = pd.read_csv(DIR+RES_TXT[0], sep=",", header=None)
-ocr_result = pd.DataFrame(
-    data=[], columns=["left", "top", "width", "height", "conf", "text"]
-)
-if len(res_txt) != 0:
-    ocr_result["left"] = res_txt.loc[:,0]
-    ocr_result["top"] = res_txt.loc[:,1]
-    ocr_result["width"] = list(np.subtract(res_txt.loc[:,4], res_txt.loc[:,0]))
-    ocr_result["height"] = list(np.subtract(res_txt.loc[:,5], res_txt.loc[:,1]))
-    ocr_result["conf"] = 0.
-    ocr_result["text"] = "nan"
-# print(ocr_result)
+# save detection heatmap
+filename, file_ext = os.path.splitext(os.path.basename(img_file))
+mask_file = RESULT_DIR + "/res_2_heatmapimg.jpg"
+cv2.imwrite(mask_file, heatmapimg_ndarray)
 
 
+# polys(ndarray) --> ocr_result(dataframe)
+tl, _, br, _ = map(list, zip(*polys))
+tl_x, tl_y = map(list, zip(*tl))
+br_x, br_y = map(list, zip(*br))
+ocr_result = pd.DataFrame(data=[], columns=["left", "top", "width", "height", "conf", "text"])
+ocr_result["left"] = tl_x
+ocr_result["top"] = tl_y
+ocr_result["width"] = list(np.subtract(br_x, tl_x))
+ocr_result["height"] = list(np.subtract(br_y, tl_y))
+ocr_result["conf"] = 0.       # update after OCR
+ocr_result["text"] = "nan"    # update after OCR
 
 
-""" OCR each character """
+""" Detection Result Check """
+plt.figure(figsize=((dw/max(dw,dh)*20)*3,(dh/max(dw,dh)*20)) )
+plt.subplot(131)
+plt.imshow(original_img_ndarray)
+plt.subplot(132)
+img_mask = cv2.resize(heatmapimg_ndarray, dsize=(dw*2, dh), interpolation=cv2.INTER_CUBIC)
+plt.imshow(original_img_ndarray)
+plt.imshow(img_mask[:dh,:dw//2], alpha=0.5)
+plt.subplot(133)
+plt.imshow(img_mask[:dh,dw//2:])
+# plt.show()      # optional
+plt.savefig(RESULT_DIR+"res_3_subplot.jpg")
+
+
+""" Detection Result --> Extract(OCR) each character """
 import easyocr
 reader = easyocr.Reader(["en", "ko"])  # ['en', 'ko']
-img = plt.imread(DIR+ORIGINAL_IMG[0])
-dh, dw, _ = img.shape
+img = original_img_ndarray.copy()
 MARGIN = 5
 for idx, row in ocr_result.iterrows():
     x, y, w, h = int(row["left"]), int(row["top"]), int(row["width"]), int(row["height"])
     img_portion = img[max(0,y-MARGIN):min(dh,(y+h)+MARGIN), max(0,x-MARGIN):min(dw,(x+w)+MARGIN), :].copy()
     bounds = reader.readtext(
         img_portion,
-        blocklist="DoOㅇaSsLlIi",  # alphabet
+        blocklist="DoOㅇ이미aSsLlIiUu그",  # I need number, not alphabet
         min_size=0,
         low_text=0.1,
+        # rotation_info=[-10,0,10],   # Not good, it gets creative. It reads 3 as 9.
         canvas_size=np.inf
     )  # optional (allowlist ='0123456789')
     # print(bounds)
     if len(bounds) != 0 :
         ocr_result.loc[idx, "text"] = str(bounds[0][1])
         ocr_result.loc[idx, "conf"] = float(bounds[0][2])
-    # cv2.rectangle(img, (int(x), int(y)), (int(x) + int(w), int(y) + int(h)), (255, 0, 0), 1 ) # -1 은 채운다
-#
-print("nan/len =",np.sum(ocr_result['text']=="nan"),"/",len(ocr_result) )
-# print(ocr_result)
-
+print("Quick OCR performance check (null/len) :",np.sum(ocr_result['text']=="nan"),"/",len(ocr_result) )
 
 
 """ Before masking non-numeric character """
 # type result and draw bbox over image
-import _hangul_font_for_pyplot
-def _img_ocr_result(img, ocr_result, FONT_SIZE=10):
-    for idx, row in ocr_result.iterrows():
-        if row["conf"] >= 0:  # threshold
-            x, y, w, h = row["left"], row["top"], row["width"], row["height"]
-            plt.text(x, (y - 10), row["text"], fontsize=FONT_SIZE, color="red")
-            cv2.rectangle(
-                img,
-                (int(x), int(y)),
-                (int(x) + int(w), int(y) + int(h)),
-                (255, 0, 0),
-                1,
-            )
-    return img
-import cv2
-import matplotlib.pyplot as plt
-plt.figure(figsize=(20,5))
-img_with_ocr = plt.imread(DIR+ORIGINAL_IMG[0])
+plt.figure(figsize=((dw/max(dw,dh)*10),(dh/max(dw,dh)*10)) )
+img_with_ocr = original_img_ndarray.copy()
 img_with_ocr = _img_ocr_result(img_with_ocr, ocr_result, FONT_SIZE=8)  # plt.text
 plt.imshow(img_with_ocr)
-plt.savefig(DIR+"res_5_img_with_ocr.jpg")
+plt.savefig(RESULT_DIR+"res_4_img_with_ocr.jpg")
 # plt.show()
-
-
 
 
 """ Remove/Mask non-numeric character """
@@ -280,9 +252,8 @@ for idx, str_item in enumerate(ocr_result["text"]):
         if not char.isdigit():
             str_item = str_item.replace(char, "")
             ocr_result.loc[idx, "text"] = str_item  # remove non-numeric char from DataFrame, such as comma
-# return ocr_result
 # mask the non-numerics in img
-img_masked = img.copy()
+img_masked = original_img_ndarray.copy()
 for _, row in ocr_result.iterrows():
     if not row["text"].isdigit():
         x, y, w, h = row["left"], row["top"], row["width"], row["height"]
@@ -290,8 +261,28 @@ for _, row in ocr_result.iterrows():
 # return img
 ocr_result = ocr_result[ocr_result["text"] != ""].reset_index(drop=True)
 
-cv2.imwrite(DIR+"res_6_digit_only.jpg", img_masked)
+plt.imsave(RESULT_DIR+"res_5_digit_only.jpg", img_masked)
 
-# plt.figure(figsize=(20,5))
-# plt.imshow(img_masked)
-# plt.show()
+
+
+""" Extract(OCR) from masked image """
+ocr_result = _ocr_easyocr_whole_img(img_masked, CONFIDENCE=0.0)    # ocr_result overwrite
+ocr_result.to_csv(f'{RESULT_DIR}res_6_ocr_result.csv', sep=',')
+img = original_img_ndarray.copy()
+plt.figure(figsize=((dw/max(dw,dh)*30)*2,(dh/max(dw,dh)*30)) )
+plt.subplot(121)
+img_with_ocr = _img_ocr_result(img, ocr_result, FONT_SIZE=16)  # plt.text
+plt.imshow(img_with_ocr)
+plt.subplot(122)
+x_fine, y_fine, z_grid = _heatmap_2(img, ocr_result)
+dh, dw, _ = img.shape
+plt.ylim(dh, 0)
+plt.pcolor(x_fine, y_fine, z_grid)
+plt.colorbar()
+# plt.show()      # optional
+plt.savefig(RESULT_DIR+"res_7_subplot.jpg")
+
+
+
+
+print('Run Duration: {:.0f}m {:.0f}s'.format( (time.time()-starttime)//60, (time.time()-starttime)%60) )
