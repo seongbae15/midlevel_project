@@ -1,4 +1,4 @@
-from DataManager import load_test_input_data_det
+from DataManager import load_test_input_data_det, load_test_input_data_pose_est
 from ModelManager import (
     load_human_detector_model,
     load_pose_estimator_model,
@@ -43,26 +43,27 @@ def main():
     print(f"-----Complete human detection model init work-----\n {pose_est_model}")
 
     human_det_model = load_human_detection_pretrain_weight(human_det_model, det_model_weight_path)
+    print("-----Complete Detection Human: BBox-----")
+
     logger.info("=> loading model from {}".format(pose_est_model_weight_path))
     pose_est_model = load_pose_estimation_pretrain_weight(pose_est_model, pose_est_model_weight_path)
 
     # Huamn Detection
-    detect_human(input_dataset_det, human_det_model, classes=0)
+    det_result = detect_human(input_dataset_det, human_det_model, classes=0)
+
+    pose_est_ds, pose_est_dataloader = load_test_input_data_pose_est(det_result["data"])
+    print("-----Complete to create pose estimation dataloader-----")
+
+    # Pose Keypoint Estimation
+    outputs = estimate_pose(pose_est_dataloader, pose_est_ds, pose_est_model)
+    print("-----Complete to run pose estimation-----")
 
     # To Do~~~~
-    # 1. Set Input fo Pose Estimation Data
-    # 2. Run(Test) Pose Estimation
     # 3. Result Visualize (Adjust Image Size)
-
-    # Set
-
-    # # Pose Keypoint Estimation
-    input_dataset_pose = ""
-    estimate_pose(input_dataset_pose, pose_est_model)
-
-    # Release
-    release()
-    pass
+    outputs[0]["file_path"]
+    for pose_key in outputs[0]["pose_keys"]:
+        pass
+    # Visualize
 
 
 if __name__ == "__main__":

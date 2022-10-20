@@ -8,6 +8,9 @@ DET_OUT_DIR = "output/HumanDetection"
 DET_NAME_DIR = "HumanDetector/YOLOv4/data/coco.names"
 DET_SAVE_TXT = True
 DET_SAVE_IMG = True
-DET_VIEW_IMG = True
+DET_VIEW_IMG = False
 
 POSE_CFG = config
+
+POSE_IMG_HEIGHT = 256
+POSE_IMG_WIDTH = 256
