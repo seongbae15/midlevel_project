@@ -11,10 +11,11 @@ import torch
 import torchvision
 from torchvision import transforms
 from torch.utils.data import DataLoader
-from torchvision.transforms.functional import to_pil_image
+import torchvision.transforms.functional as tfu
 import warnings
 import deepgaze_pytorch
 from PIL import Image
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 warnings.filterwarnings("ignore")
 DEVICE = "cpu"
@@ -27,11 +28,10 @@ train_path = "../data_sample"  # on notebook : ../data_sample
 model = deepgaze_pytorch.DeepGazeIIE(pretrained=True).to(DEVICE)
 print(model.eval())
 
-# image resize
+# image transform
 resize_trans = transforms.Compose(
     [
         transforms.Resize((900, 900)),
-        #  transforms.GaussianBlur(kernel_size=(25, 25), sigma=(0.1, 2)),
         transforms.ToTensor(),
     ]
 )
@@ -42,12 +42,14 @@ dataloader = torchvision.datasets.ImageFolder(root=train_path, transform=resize_
 
 for idx, pics in enumerate(dataloader):
     image_rgb = pics[0]
+    image_rgb = tfu.adjust_brightness(image_rgb, 1.2)
+    image_tf = tfu.adjust_gamma(image_rgb, 2)
 
     # print(len(pics), type(pics), image_rgb.size(), image_rgb.dim())
-    # image = color.rgb2lab(rgb=image_rgb.T, channel_axis=-1)  # color space to lab
-    image = image_rgb
+    image = color.rgb2lab(rgb=image_tf.T, channel_axis=-1)  # color space to lab
+
     # result = 800, 1200, 3 -> 바꿔줘야
-    image = torch.tensor(image).to(DEVICE)  # .transpose(2, 1, 0) on Lab
+    image = torch.tensor(image.transpose(2, 1, 0)).to(DEVICE)
 
     image_unsq = image.unsqueeze(dim=0)
     # print(    type(image_unsq),  image_unsq.dim(),  image_unsq.shape, )
@@ -56,8 +58,10 @@ for idx, pics in enumerate(dataloader):
     # you can download the centerbias from https://github.com/matthias-k/DeepGaze/releases/download/v1.0.0/centerbias_mit1003.npy
     # alternatively, you can use a uniform centerbias via `centerbias_template = np.zeros((1024, 1024))`.
 
-    # centerbias_template = np.load("centerbias_mit1003.npy"  )  # on vsc ./deepgaze_sample/centerbias_mit1003.npy
-    centerbias_template = np.load("new_cb.npy")  # customized npy
+    centerbias_template = np.load(
+        "centerbias_mit1003.npy"
+    )  # on vsc ./deepgaze_sample/centerbias_mit1003.npy
+    # centerbias_template = np.load( "new_cb.npy")  # #customized npy
     # centerbias_template = np.ones((900, 900)) * (-16)
 
     # rescale to match image size
@@ -67,7 +71,7 @@ for idx, pics in enumerate(dataloader):
             image_unsq.shape[2] / centerbias_template.shape[0],
             image_unsq.shape[3] / centerbias_template.shape[1],
         ),
-        order=0,
+        order=1,
         mode="nearest",
     )
     # renormalize log density
@@ -90,6 +94,11 @@ for idx, pics in enumerate(dataloader):
         np.exp(log_density_prediction.detach().cpu().numpy()[0, 0]), cmap=plt.cm.RdBu
     )
     axs[2].axis("off")
+
+    # divider = make_axes_locatable(axs[2])
+    # cax = divider.append_axes("right", size="5%", pad=0.5)
+    # plt.colorbar(axs[2], cax=cax)
+
     plt.savefig(f"../data_result/{idx}_result.png")
 
 # %%
