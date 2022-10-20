@@ -5,6 +5,7 @@ from HumanDetector.YOLOv4.utils.general import non_max_suppression, scale_coords
 from HumanDetector.YOLOv4.utils.plots import plot_one_box
 
 from KeypointsEstimator.SimpleBaseline.lib.models.pose_resnet import get_pose_net
+from KeypointsEstimator.SimpleBaseline.lib.core.inference import get_final_preds
 
 from utils import *
 from CONFIG import *
@@ -49,6 +50,7 @@ def load_classes(path):
     return list(filter(None, names))  # filter removes empty strings (such as last line)
 
 
+@torch.no_grad()
 def detect_human(input_dataset, human_det_model, is_augment=False, classes=None):
     print("-----Start Detection Human: BBox-----")
 
@@ -74,6 +76,11 @@ def detect_human(input_dataset, human_det_model, is_augment=False, classes=None)
     t0 = time.time()
     img = torch.zeros((1, 3, DET_IMG_SIZE, DET_IMG_SIZE), device=device)  # init img
     _ = human_det_model(img.half() if half else img) if device != "cpu" else None  # run once
+
+    # Dictionary to Save
+    result_det = {}
+    det_datas = []
+
     for path, img, im0s, vid_cap in input_dataset:
         img = torch.from_numpy(img).to(device)
         img = img.half() if half else img.float()  # uint8 to fp16/32
@@ -116,6 +123,11 @@ def detect_human(input_dataset, human_det_model, is_augment=False, classes=None)
                     if DET_SAVE_IMG or DET_VIEW_IMG:  # Add bbox to image
                         label = "%s %.2f" % (names[int(cls)], conf)
                         plot_one_box(xyxy, im0, label=label, color=colors[int(cls)], line_thickness=3)
+                    temp = []
+                    for xy in xyxy:
+                        temp.append(int(xy.item()))
+                    det_element = {"file_path": p, "bbox_xyxy": temp}
+                    det_datas.append(det_element)
 
             # Print time (inference + NMS)
             print("%sDone. (%.3fs)" % (s, t2 - t1))
@@ -145,10 +157,52 @@ def detect_human(input_dataset, human_det_model, is_augment=False, classes=None)
 
     if DET_SAVE_TXT or DET_SAVE_IMG:
         print("Results saved to %s" % Path(out))
-
     print("Done. (%.3fs)" % (time.time() - t0))
-    print("-----Complete Detection Human: BBox-----")
+    result_det["data"] = det_datas
+    return result_det
 
 
-def estimate_pose(input_dataset, pose_est_model):
-    pass
+@torch.no_grad()
+def estimate_pose(input_datloader, pose_est_ds, pose_est_model):
+    device = "cuda:0" if torch.cuda.is_available() else "cpu"
+    pose_est_model.to(device).eval()
+
+    num_samples = len(pose_est_ds)
+    all_preds = np.zeros((num_samples, config.MODEL.NUM_JOINTS, 3), dtype=np.float32)
+    all_boxes = np.zeros((num_samples, 5))
+
+    outputs = []
+    idx = 0
+    for input, db in input_datloader:
+        output_total = {}
+        x = input.to(device)
+        output = pose_est_model(x)
+
+        num_images = input.size(0)
+
+        c = db["center"].numpy()
+        s = db["scale"].numpy()
+
+        preds, maxvals = get_final_preds(POSE_CFG, output.clone().cpu().numpy(), c, s)
+        all_preds[idx : idx + num_images, :, 0:2] = preds[:, :, 0:2]
+        all_preds[idx : idx + num_images, :, 2:3] = maxvals
+        # double check this all_boxes parts
+        all_boxes[idx : idx + num_images, 0:2] = c[:, 0:2]
+        all_boxes[idx : idx + num_images, 2:4] = s[:, 0:2]
+        all_boxes[idx : idx + num_images, 4] = np.prod(s * 200, 1)
+        idx += 1
+
+        xyxy_temp = []
+        for xy in db["bbox_xyxy"]:
+            xyxy_temp.append(int(xy.item()))
+        output_total = {
+            "file_path": db["file_path"],
+            "pose_keys": preds[:, :, 0:2],
+            "max_p": maxvals,
+            "bbox_xyxy": xyxy_temp,
+            "center": [c[:, 0:2]],
+            "scale": [s[:, 0:2]],
+        }
+        outputs.append(output_total)
+
+    return outputs
