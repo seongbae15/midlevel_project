@@ -24,7 +24,8 @@ class CustomPoseEstDataset(Dataset):
     def __getitem__(self, index):
         db = deepcopy(self.db[index])
         image_file = db["file_path"]
-        np_image = cv2.imread(image_file, cv2.IMREAD_COLOR | cv2.IMREAD_IGNORE_ORIENTATION)
+        # np_image = cv2.imread(image_file, cv2.IMREAD_COLOR | cv2.IMREAD_IGNORE_ORIENTATION)
+        np_image = cv2.imread(image_file, cv2.IMREAD_COLOR)
         if np_image is None:
             raise ValueError("Fail to read {}".format(image_file))
 

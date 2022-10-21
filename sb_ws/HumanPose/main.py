@@ -9,8 +9,10 @@ from ModelManager import (
 )
 from utils import *
 from CONFIG import *
-
 from KeypointsEstimator.SimpleBaseline.lib.utils.utils import create_logger
+
+import cv2
+import numpy as np
 
 
 def release():
@@ -25,7 +27,7 @@ def main():
 
     # init pose estimation path
     pose_est_model_cfg_path = convert_abs_path(
-        "KeypointsEstimator/SimpleBaseline/experiments/coco/resnet50/256x192_d256x3_adam_lr1e-3.yaml"
+        "KeypointsEstimator/SimpleBaseline/experiments/coco/resnet152/256x192_d256x3_adam_lr1e-3.yaml"
     )
     pose_est_model_weight_path = convert_abs_path(POSE_CFG.TEST.MODEL_FILE)
     logger, final_output_dir, tb_log_dir = create_logger(config, pose_est_model_cfg_path, "valid")
@@ -56,14 +58,8 @@ def main():
 
     # Pose Keypoint Estimation
     outputs = estimate_pose(pose_est_dataloader, pose_est_ds, pose_est_model)
+    draw_keypoint(outputs)
     print("-----Complete to run pose estimation-----")
-
-    # To Do~~~~
-    # 3. Result Visualize (Adjust Image Size)
-    outputs[0]["file_path"]
-    for pose_key in outputs[0]["pose_keys"]:
-        pass
-    # Visualize
 
 
 if __name__ == "__main__":
