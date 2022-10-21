@@ -32,7 +32,7 @@ config.CUDNN.ENABLED = True
 
 # pose_resnet related params
 POSE_RESNET = edict()
-POSE_RESNET.NUM_LAYERS = 50
+POSE_RESNET.NUM_LAYERS = 152
 POSE_RESNET.DECONV_WITH_BIAS = False
 POSE_RESNET.NUM_DECONV_LAYERS = 3
 POSE_RESNET.NUM_DECONV_FILTERS = [256, 256, 256]
@@ -114,7 +114,7 @@ config.TEST.OKS_THRE = 0.5
 config.TEST.IN_VIS_THRE = 0.0
 config.TEST.COCO_BBOX_FILE = ""
 config.TEST.BBOX_THRE = 1.0
-config.TEST.MODEL_FILE = "KeypointsEstimator/SimpleBaseline/models/pytorch/pose_coco/pose_resnet_50_256x192.pth.tar"
+config.TEST.MODEL_FILE = "KeypointsEstimator/SimpleBaseline/models/pytorch/pose_coco/pose_resnet_152_256x192.pth.tar"
 config.TEST.IMAGE_THRE = 0.0
 config.TEST.NMS_THRE = 1.0
 

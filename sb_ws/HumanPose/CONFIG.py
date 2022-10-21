@@ -14,3 +14,23 @@ POSE_CFG = config
 
 POSE_IMG_HEIGHT = 256
 POSE_IMG_WIDTH = 256
+
+KEY_POINT_CIRCLE_RADIUS = 3
+KEY_POINT_CIRCLE_COLOR = (0, 0, 255)
+
+POSE_PAIRS = [
+    (5, 6),
+    (5, 7),
+    (6, 8),
+    (7, 9),
+    (8, 10),
+    (5, 11),
+    (6, 12),
+    (11, 12),
+    (11, 13),
+    (12, 14),
+    (13, 15),
+    (14, 16),
+]
+
+POSE_IMG_SAVE_DIR = "output/KeypointsEstimation"
