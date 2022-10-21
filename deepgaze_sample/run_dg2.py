@@ -16,12 +16,11 @@ import warnings
 import deepgaze_pytorch
 from PIL import Image
 
-력
+
 warnings.filterwarnings("ignore")
 DEVICE = "cpu"
 
-# image = face() #racoon face image load
-train_path = "../data_sample"  # on notebook : ../data_sample
+train_path = "../data_evm"  # on notebook : ../data_sample
 
 
 # you can use DeepGazeI or DeepGazeIIE
@@ -39,10 +38,13 @@ resize_trans = transforms.Compose(
 # with folder:
 dataloader = torchvision.datasets.ImageFolder(root=train_path, transform=resize_trans)
 
-
+ig_base = []
+ls_ig = []
 for idx, pics in enumerate(dataloader):
     image_rgb = pics[0]
-    image_rgb = tfu.adjust_brightness(image_rgb, 1.2)
+    image_orig = image_rgb.clone().detach()
+    # image_tf = tfu.gaussian_blur(image_rgb, [25, 25])
+    # image_tf = tfu.adjust_brightness(image_rgb, 1.2)
     image_tf = tfu.adjust_gamma(image_rgb, 2)
 
     # print(len(pics), type(pics), image_rgb.size(), image_rgb.dim())
@@ -51,18 +53,12 @@ for idx, pics in enumerate(dataloader):
     # result = 800, 1200, 3 -> 바꿔줘야
     image = torch.tensor(image.transpose(2, 1, 0)).to(DEVICE)
 
+    # image_rgb = image_rgb.unsqueeze(dim=0)
     image_unsq = image.unsqueeze(dim=0)
-    # print(    type(image_unsq),  image_unsq.dim(),  image_unsq.shape, )
-    # break
-    # load precomputed centerbias log density (from MIT1003) over a 1024x1024 image
-    # you can download the centerbias from https://github.com/matthias-k/DeepGaze/releases/download/v1.0.0/centerbias_mit1003.npy
-    # alternatively, you can use a uniform centerbias via `centerbias_template = np.zeros((1024, 1024))`.
 
-    centerbias_template = np.load(
-        "centerbias_mit1003.npy"
-    )  # on vsc ./deepgaze_sample/centerbias_mit1003.npy
-    # centerbias_template = np.load( "new_cb.npy")  # #customized npy
-    # centerbias_template = np.ones((900, 900)) * (-16)
+    # centerbias_template = np.zeros((900, 900))
+    centerbias_template = np.ones((900, 900)) * -16
+    # centerbias_template = np.load("centerbias_mit1003.npy")
 
     # rescale to match image size
     centerbias = zoom(
@@ -71,39 +67,48 @@ for idx, pics in enumerate(dataloader):
             image_unsq.shape[2] / centerbias_template.shape[0],
             image_unsq.shape[3] / centerbias_template.shape[1],
         ),
-        order=1,
+        order=5,
         mode="nearest",
     )
+
+    # centerbias_rgb = zoom(
+    #     centerbias_template,
+    #     (
+    #         image_rgb.shape[2] / centerbias_template.shape[0],
+    #         image_rgb.shape[3] / centerbias_template.shape[1],
+    #     ),
+    #     order=5,
+    #     mode="nearest",
+    # )
     # renormalize log density
-    # centerbias -= logsumexp(centerbias)
+    centerbias -= logsumexp(centerbias)
     centerbias_tensor = torch.tensor([centerbias]).to(DEVICE)
 
+    # log_density_prediction_base = model(image_rgb, centerbias_rgb)
     log_density_prediction = model(image_unsq, centerbias_tensor)
-
-    base_prob = np.load("base_probability.npy")
-    eval_torch = log_density_prediction.squeeze().detach().numpy()
-    ig_result = (base_prob - eval_torch).sum() / (
-        image_rgb.shape[2] * image_rgb.shape[3]
+    print(f"image number {idx} predicition is done")
+    base_prob = np.load(f"../data_result/{idx}_prob.npy")
+    eval_prob = log_density_prediction.squeeze().detach().numpy()
+    ig_result = (base_prob - eval_prob).sum() / (
+        image_unsq.shape[2] * image_unsq.shape[3]
     )
-    print(ig_result)
-
-    if idx % 10 == 0:
-        print(f"number {idx} image is processed")
+    ls_ig.append(ig_result)
     f, axs = plt.subplots(nrows=1, ncols=3, figsize=(18, 12))
-    axs[0].imshow(torch.transpose(image_rgb, 2, 0).transpose(0, 1))
+    axs[0].imshow(torch.transpose(image_orig, 2, 0).transpose(0, 1))
+    axs[0].axis("off")
     axs[1].matshow(
         np.exp(log_density_prediction.detach().cpu().numpy()[0, 0]),
         alpha=0.5,
-        cmap=plt.cm.RdBu,
+        cmap=plt.cm.tab20b,
     )
-    axs[1].imshow(torch.transpose(image_rgb, 2, 0).transpose(0, 1), alpha=0.4)
+    axs[1].imshow(torch.transpose(image_orig, 2, 0).transpose(0, 1), alpha=0.4)
     axs[1].axis("off")
     axs[2].matshow(
-        np.exp(log_density_prediction.detach().cpu().numpy()[0, 0]), cmap=plt.cm.RdBu
+        np.exp(log_density_prediction.detach().cpu().numpy()[0, 0]), cmap=plt.cm.tab20b
     )
-    axs[2].axis("off")
-    axs[2].set_ylabel(ig_result)
+    axs[2].set_xlabel(ig_result)
 
     plt.savefig(f"../data_result/{idx}_result.png")
+print(f"total IG = {np.array(ls_ig).mean()}")
 
 # %%
