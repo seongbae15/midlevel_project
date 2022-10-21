@@ -15,8 +15,8 @@ import torchvision.transforms.functional as tfu
 import warnings
 import deepgaze_pytorch
 from PIL import Image
-from mpl_toolkits.axes_grid1 import make_axes_locatable
 
+력
 warnings.filterwarnings("ignore")
 DEVICE = "cpu"
 
@@ -94,10 +94,6 @@ for idx, pics in enumerate(dataloader):
         np.exp(log_density_prediction.detach().cpu().numpy()[0, 0]), cmap=plt.cm.RdBu
     )
     axs[2].axis("off")
-
-    # divider = make_axes_locatable(axs[2])
-    # cax = divider.append_axes("right", size="5%", pad=0.5)
-    # plt.colorbar(axs[2], cax=cax)
 
     plt.savefig(f"../data_result/{idx}_result.png")
 

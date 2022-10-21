@@ -24,7 +24,7 @@ warnings.filterwarnings("ignore")
 DEVICE = "cpu"
 
 # image = face() #racoon face image load
-train_path = "./data_sample"
+train_path = "./data_evm"
 
 
 # you can use DeepGazeI or DeepGazeIIE
@@ -44,15 +44,15 @@ dataloader = torchvision.datasets.ImageFolder(root=train_path, transform=resize_
 
 pics = dataloader[0]
 image_rgb = pics[0]
-image_rgb = tfu.adjust_brightness(image_rgb, 1.2)
-image_tf = tfu.adjust_gamma(image_rgb, 2)
+
 
 # print(len(pics), type(pics), image_rgb.size(), image_rgb.dim())
-image = color.rgb2lab(rgb=image_tf.T, channel_axis=-1)  # color space to lab
+image = color.rgb2lab(rgb=image_rgb.T, channel_axis=-1)  # color space to lab
 
 # result = 800, 1200, 3 -> 바꿔줘야
 image = torch.tensor(image.transpose(2, 1, 0)).to(DEVICE)
 
+image_rgb = image_rgb.unsqueeze(dim=0)
 image_unsq = image.unsqueeze(dim=0)
 
 centerbias_template = np.load("deepgaze_sample/centerbias_mit1003.npy")
@@ -69,27 +69,40 @@ centerbias = zoom(
     mode="nearest",
 )
 # renormalize log density
-# centerbias -= logsumexp(centerbias)
+centerbias -= logsumexp(centerbias)
 centerbias_tensor = torch.tensor([centerbias]).to(DEVICE)
 
-log_density_prediction = model(image_unsq, centerbias_tensor)
 
-f, axs = plt.subplots(nrows=1, ncols=4, figsize=(18, 12))
-axs[0].imshow(torch.transpose(image_rgb, 2, 0).transpose(0, 1))
-axs[1].matshow(
-    np.exp(log_density_prediction.detach().cpu().numpy()[0, 0]),
-    alpha=0.5,
-    cmap=plt.cm.RdBu,
-)
-axs[1].imshow(torch.transpose(image_rgb, 2, 0).transpose(0, 1), alpha=0.4)
-axs[1].axis("off")
-axs[2].matshow(
-    np.exp(log_density_prediction.detach().cpu().numpy()[0, 0]), cmap=plt.cm.RdBu
-)
-axs[2].axis("off")
+log_density_prediction_base = model(image_rgb, centerbias_tensor)
+log_density_prediction_eval = model(image_unsq, centerbias_tensor)
+
+base_torch = log_density_prediction_base.squeeze().detach().numpy()
+eval_torch = log_density_prediction_eval.squeeze().detach().numpy()
+np_dif = base_torch - eval_torch
+
+print((image_rgb).shape[:], type(np_dif))
+
+print(np_dif.sum() / (image_rgb.shape[2] * image_rgb.shape[3]))
 
 
-df_result = pd.DataFrame(np.exp(log_density_prediction.detach().cpu().numpy()[0, 0]))
-print(df_result.sum().sum())
+# log_density_prediction_eval
+
+# f, axs = plt.subplots(nrows=1, ncols=2, figsize=(18, 12))
+# axs[0].matshow(
+#     np.exp(log_density_prediction_base.detach().cpu().numpy()[0, 0]),
+#     alpha=0.5,
+#     cmap=plt.cm.RdBu,
+# )
+# axs[1].matshow(
+#     np.exp(log_density_prediction_eval.detach().cpu().numpy()[0, 0]),
+#     alpha=0.5,
+#     cmap=plt.cm.RdBu,
+# )
+# axs[1].imshow(torch.transpose(image_rgb, 2, 0).transpose(0, 1), alpha=0.4)
+# axs[1].axis("off")
+
+
+# df_result = pd.DataFrame(np.exp(log_density_prediction.detach().cpu().numpy()[0, 0]))
+# print(df_result.sum().sum())
 
 # %%
