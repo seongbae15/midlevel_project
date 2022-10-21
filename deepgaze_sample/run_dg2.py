@@ -79,6 +79,14 @@ for idx, pics in enumerate(dataloader):
     centerbias_tensor = torch.tensor([centerbias]).to(DEVICE)
 
     log_density_prediction = model(image_unsq, centerbias_tensor)
+
+    base_prob = np.load("base_probability.npy")
+    eval_torch = log_density_prediction.squeeze().detach().numpy()
+    ig_result = (base_prob - eval_torch).sum() / (
+        image_rgb.shape[2] * image_rgb.shape[3]
+    )
+    print(ig_result)
+
     if idx % 10 == 0:
         print(f"number {idx} image is processed")
     f, axs = plt.subplots(nrows=1, ncols=3, figsize=(18, 12))
@@ -94,6 +102,7 @@ for idx, pics in enumerate(dataloader):
         np.exp(log_density_prediction.detach().cpu().numpy()[0, 0]), cmap=plt.cm.RdBu
     )
     axs[2].axis("off")
+    axs[2].set_ylabel(ig_result)
 
     plt.savefig(f"../data_result/{idx}_result.png")
 

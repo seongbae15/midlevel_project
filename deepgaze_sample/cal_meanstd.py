@@ -16,6 +16,11 @@ import warnings
 warnings.filterwarnings("ignore")
 from scipy.misc import face
 
+a = np.exp(100)
+b = np.log(a)
+print(a, b)
+
+
 image = face()
 image_tensor = torch.tensor([image.transpose(2, 0, 1)]).to("cpu")
 

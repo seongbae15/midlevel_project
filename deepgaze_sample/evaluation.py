@@ -65,7 +65,7 @@ centerbias = zoom(
         image_unsq.shape[2] / centerbias_template.shape[0],
         image_unsq.shape[3] / centerbias_template.shape[1],
     ),
-    order=1,
+    order=0,
     mode="nearest",
 )
 # renormalize log density
@@ -77,6 +77,7 @@ log_density_prediction_base = model(image_rgb, centerbias_tensor)
 log_density_prediction_eval = model(image_unsq, centerbias_tensor)
 
 base_torch = log_density_prediction_base.squeeze().detach().numpy()
+np.save("./base_probability.npy", base_torch)
 eval_torch = log_density_prediction_eval.squeeze().detach().numpy()
 np_dif = base_torch - eval_torch
 
