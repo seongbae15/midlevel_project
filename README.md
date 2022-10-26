@@ -5,11 +5,11 @@
 범용으로 사용할 수 있는 다양한 Mid-level vision process 구상 구현 및 활용   
 Developing concept & code of mid-level vision process for general purpose
 
-### Participants (personal page on click)
-[Seongbae Park (Team leader)] (https://github.com/Rum-j/midlevel_project/tree/main/sb_ws)
-[Jayha Shin] (https://github.com/Rum-j/midlevel_project/tree/main/JayhaShin)
-[Seunghyun Hong] (https://github.com/Rum-j/midlevel_project/tree/main/hsh)
-[Jieun Park] (https://github.com/Rum-j/midlevel_project/tree/main/Jieun)
+### Participants (personal page on click)<br>
+[Seongbae Park (Team leader)](https://github.com/Rum-j/midlevel_project/tree/main/sb_ws) <br>
+[Jayha Shin](https://github.com/Rum-j/midlevel_project/tree/main/JayhaShin)<br>
+[Seunghyun Hong](https://github.com/Rum-j/midlevel_project/tree/main/hsh)<br>
+[Jieun Park](https://github.com/Rum-j/midlevel_project/tree/main/Jieun)<br>
 
 ### Definition of "Mid-Level features"
 - 단순 pixel 연산이 아닌 Local 단위의 feature
