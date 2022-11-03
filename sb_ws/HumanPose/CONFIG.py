@@ -15,10 +15,14 @@ POSE_CFG = config
 POSE_IMG_HEIGHT = 256
 POSE_IMG_WIDTH = 256
 
-KEY_POINT_CIRCLE_RADIUS = 3
+KEY_POINT_CIRCLE_RADIUS = 6
 KEY_POINT_CIRCLE_COLOR = (0, 0, 255)
 
 POSE_PAIRS = [
+    (0, 1),
+    (0, 2),
+    (1, 3),
+    (2, 4),
     (5, 6),
     (5, 7),
     (6, 8),

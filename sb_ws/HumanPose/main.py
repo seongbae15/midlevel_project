@@ -42,16 +42,18 @@ def main():
 
     # Load Model for pose estimation
     pose_est_model = load_pose_estimator_model(POSE_CFG, is_train=False)
-    print(f"-----Complete human detection model init work-----\n {pose_est_model}")
+    print(f"-----Complete pose estimation model init work-----\n {pose_est_model}")
 
     human_det_model = load_human_detection_pretrain_weight(human_det_model, det_model_weight_path)
-    print("-----Complete Detection Human: BBox-----")
+    print(f"-----Complete Update Weights human detection model -----\n {human_det_model}")
 
     logger.info("=> loading model from {}".format(pose_est_model_weight_path))
     pose_est_model = load_pose_estimation_pretrain_weight(pose_est_model, pose_est_model_weight_path)
+    print(f"-----Complete Update pose estimation model-----\n {pose_est_model}")
 
     # Huamn Detection
     det_result = detect_human(input_dataset_det, human_det_model, classes=0)
+    print(f"-----Complete Detection Human: BBox-----")
 
     pose_est_ds, pose_est_dataloader = load_test_input_data_pose_est(det_result["data"])
     print("-----Complete to create pose estimation dataloader-----")

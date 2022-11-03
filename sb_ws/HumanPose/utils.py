@@ -31,25 +31,25 @@ def draw_keypoint(outputs, img_save=True):
         pose_kps = output["pose_keys"][0]
 
         for pose_pair in POSE_PAIRS:
-            cv2.circle(
-                img,
-                pose_kps[pose_pair[0]].astype(np.int32),
-                KEY_POINT_CIRCLE_RADIUS,
-                color=KEY_POINT_CIRCLE_COLOR,
-                thickness=-1,
-            )
-            cv2.circle(
-                img,
-                pose_kps[pose_pair[1]].astype(np.int32),
-                KEY_POINT_CIRCLE_RADIUS,
-                color=KEY_POINT_CIRCLE_COLOR,
-                thickness=-1,
-            )
             cv2.line(
                 img,
                 pose_kps[pose_pair[0]].astype(np.int32),
                 pose_kps[pose_pair[1]].astype(np.int32),
                 color=(255, 0, 0),
-                thickness=2,
+                thickness=4,
+            )
+            cv2.circle(
+                img,
+                pose_kps[pose_pair[0]].astype(np.int32),
+                KEY_POINT_CIRCLE_RADIUS,
+                color=KEY_POINT_CIRCLE_COLOR,
+                thickness=-1,
+            )
+            cv2.circle(
+                img,
+                pose_kps[pose_pair[1]].astype(np.int32),
+                KEY_POINT_CIRCLE_RADIUS,
+                color=KEY_POINT_CIRCLE_COLOR,
+                thickness=-1,
             )
         cv2.imwrite(out_filepath, img)
