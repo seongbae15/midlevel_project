@@ -2,7 +2,6 @@
 *.weights
 *.log
 *.json
-*.yaml
 *.pth.tar
 *.pth
 *.pt
