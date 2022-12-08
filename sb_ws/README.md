@@ -2,6 +2,11 @@
 
 ## Result
 
+- Human Detection Result
+  <img src="./figures/result_human_detection.jpg">
+- Keypoints Estimation Result
+  <img src="./figures/result_keypoints.jpg">
+
 ## Top-Down 2D Pose Estimation
 
 - Step 1. Human Detection
