@@ -9,9 +9,8 @@
 
 - Human Detection : <a href="https://github.com/WongKinYiu/PyTorch_YOLOv4">YoloV4</a>
 - Body Keypoints Estimation : <a href="https://github.com/microsoft/human-pose-estimation.pytorch">Simple Baseline </a>
+  <img src="./figures/model.jpg" width="400" height="400">
 
-## Keypoints Annotation
+## COCO Keypoints Annotation
 
-- COCO
-
-<img src="./figures/coco_keypoints.jpg" width="300" height="300">
+<img src="./figures/coco_keypoints.jpg" width="400" height="400">
