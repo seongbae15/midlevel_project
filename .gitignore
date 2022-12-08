@@ -1,8 +1,6 @@
 # Mac Files
 .DS_Store
 .localized
-*.jpg
-*.png
 
 # Python
 __pycache__/
