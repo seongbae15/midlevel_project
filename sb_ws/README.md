@@ -14,4 +14,4 @@
 
 - COCO
 
-<img src="./figures/coco_keypoints.jpg">
+<img src="./figures/coco_keypoints.jpg" width="300" height="300">
