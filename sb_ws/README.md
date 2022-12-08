@@ -3,8 +3,11 @@
 ## Result
 
 - Human Detection Result
+
   <img src="./figures/result_human_detection.jpg" width="640" height="360">
+
 - Keypoints Estimation Result
+
   <img src="./figures/result_keypoints.jpg" width="640" height="360">
 
 ## Top-Down 2D Pose Estimation
